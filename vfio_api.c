@@ -1,4 +1,6 @@
 #include <linux/vfio.h>
+#include <stdlib.h>
+#include <unistd.h>
 #include <sys/mman.h>
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -99,7 +101,7 @@ int main() {
 	if(checker < 0){
 		printf("Getting device info failed. error: %d\n", checker);
 	}
-	printf("Device 3 regions flags and regions: %u %u\n", device_info.flags, device_info.num_regions);
+	printf("Device 3 regions flags, regions, irqs: %u %u %u\n", device_info.flags, device_info.num_regions, device_info.num_irqs);
 
 	for (i = 0; i < device_info.num_regions; i++) {
 		struct vfio_region_info reg = { .argsz = sizeof(reg) };
@@ -112,22 +114,51 @@ int main() {
 		}
 		else{
 			printf("Index:%d , Flags:%u , Size:%llu , Offset:%llu.\n", i, reg.flags, reg.size, reg.offset);
+
+
+		}
+
+		if(reg.index == 7){
+			void * numbers = malloc(reg.size);
+			checker = pread(device, numbers, reg.size, reg.offset);
+			if(checker < 0){
+				printf("err %d\n", checker);
+			}
+			else{
+				printf("read %d bytes\n", checker);
+				unsigned short * add  = (unsigned short *) numbers;
+				// __u64 * add = (__u64 *) numbers;	
+				for(i = 0; i < reg.size/8; i+=2){
+					printf("%08x    ", i*8);
+					for(int j = 0; j < 8; j++){
+						printf("%04X ", *add);
+						add++;
+					}
+					printf("\n");
+				}
+			}
 		}
 
 		/* Setup mappings... read/write offsets, mmaps
 		 * For PCI devices, config space is a region */
 	}
-	printf("%u\n", *((unsigned int*)dma_map.vaddr));
+	printf("%u\n", (dma_map.vaddr));
 
-	// for (i = 0; i < device_info.num_irqs; i++) {
-	// 	struct vfio_irq_info irq = { .argsz = sizeof(irq) };
+	for (i = 0; i < device_info.num_irqs; i++) {
+		struct vfio_irq_info irq = { .argsz = sizeof(irq) };
 
-	// 	irq.index = i;
+		irq.index = i;
 
-	// 	ioctl(device, VFIO_DEVICE_GET_IRQ_INFO, &irq);
+		checker = ioctl(device, VFIO_DEVICE_GET_IRQ_INFO, &irq);
+		if(checker < 0){
+			printf("Something went wrong when getting irq info. %d\n", checker);
+		}
+		else{
+			printf("Flags: %u, Count: %u\n",irq.flags, irq.count);
+		}
 
-	// 	/* Setup IRQs... eventfds, VFIO_DEVICE_SET_IRQS */
-	// }
+		/* Setup IRQs... eventfds, VFIO_DEVICE_SET_IRQS */
+	}
 
 
 	return 0;
