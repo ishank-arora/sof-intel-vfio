@@ -11,7 +11,7 @@
 WIP, exploring how IRQ handling will work.
 *VFIO checks which interrupts are supported by the device.
 *VFIO checks whether INTx, MSI, MSIx, Err, and Req interrupts are supported
-*For our device, Err IRQ is the only one that is not supported. Or at least ioctl for getting information about the ERR_IRQ fails. 
+*For our device, Err IRQ is the only one that is not supported. Or at least ioctl for getting information about the ERR_IRQ fails. This may also be because there have been no errors on the IO-APIC bus. Not sure.
 *For INTx, MSI, and Req interrupts, VFIO reports that there is 1 IRQ. For MSIx, there are 0 IRQ. 0 count, according to the documentation, may be used to describe unimplemented interrupt types. According to the documentation, INTx interrupts are enabled by default, and MSI messages are not being transmitted by default. However, the capabilities to disable and enable both exist, so will have to take that into account when setting IRQs. The INTx interrupts have the eventfd, maskable, and automasked flags enabled, while the rest have the eventfd and noresize flag enabled. More information about the flags in the vfio doc. 
 
 ### device_to_vfio.sh
