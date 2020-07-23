@@ -51,7 +51,7 @@ int main() {
 	}
 	if (!(group_status.flags & VFIO_GROUP_FLAGS_VIABLE)){
 		/* Group is not viable (ie, not all devices bound for vfio) */
-		printf("group not ready for this\n");
+		printf("Not all devices in group are bound vfio\n");
 	}
 	/* Add the group to the container */
 	ret = ioctl(group, VFIO_GROUP_SET_CONTAINER, &container);
@@ -80,7 +80,7 @@ int main() {
 
 	ret = ioctl(container, VFIO_IOMMU_MAP_DMA, &dma_map);
 	if(ret < 0){
-		printf("I wonder if this means something. %d\n", ret);
+		printf("IOMMU MAP DMA failed. %d\n", ret);
 	}
 
 	printf("DMA Map info. Size: %llu, flags: %u\n", dma_map.size, dma_map.flags);
@@ -108,7 +108,7 @@ int main() {
 
 		ret = ioctl(device, VFIO_DEVICE_GET_REGION_INFO, &reg);
 		if(ret < 0){
-			printf("This device region is not set. %d\n", ret);
+			printf("Error getting device region info. %d\n", ret);
 		}
 		else{
 			printf("Index:%d , Flags:%u , Size:%llu , Offset:%llu.\n", i, reg.flags, reg.size, reg.offset);
@@ -116,31 +116,40 @@ int main() {
 
 		}
 
-		if(reg.index == 7){
-			void * numbers = malloc(reg.size);
-			ret = pread(device, numbers, reg.size, reg.offset);
-			if(ret < 0){
-				printf("err %d\n", ret);
-			}
-			else{
-				printf("read %d bytes\n", ret);
-				unsigned short * add  = (unsigned short *) numbers;
-				for(i = 0; i < reg.size/8; i+=2){
-					printf("%08x", i*8);
-					for(int j = 0; j < 8; j++){
-						printf(" %04x", *add);
-						add++;
-					}
-					printf("\n");
-				}
-			}
-		}
+		
 
 		/* Setup mappings... read/write offsets, mmaps
 		 * For PCI devices, config space is a region */
 	}
-	printf("%u\n", (dma_map.vaddr));
+	printf("\n\n");
+	struct vfio_region_info reg = { .argsz = sizeof(reg) };
+	reg.index = VFIO_PCI_CONFIG_REGION_INDEX;
 
+	ret = ioctl(device, VFIO_DEVICE_GET_REGION_INFO, &reg);
+	if(ret < 0){
+		printf("Error getting config space device region. %d\n", ret);
+	}
+	else{
+		void * numbers = malloc(reg.size);
+		ret = pread(device, numbers, reg.size, reg.offset);
+		if(ret < 0){
+			printf("read err %d\n", ret);
+		}
+		else{
+			printf("read %d bytes\n", ret);
+			unsigned short * add  = (unsigned short *) numbers;
+			for(i = 0; i < reg.size/8; i+=2){
+				printf("%08x", i*8);
+				for(int j = 0; j < 8; j++){
+					printf(" %04x", *add);						
+					add++;
+				}
+				printf("\n");
+			}
+		}
+	}
+	printf("\n\n");
+	
 	for (i = 0; i < device_info.num_irqs; i++) {
 		struct vfio_irq_info irq = { .argsz = sizeof(irq) };
 
