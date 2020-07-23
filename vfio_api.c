@@ -8,8 +8,6 @@
 #include <sys/ioctl.h>
 #include <stdio.h>
 
-#define DMA_SIZE 19408
-
 int main() {
 	int container = -1, group = -1, device = -1, i = 0;
 	struct vfio_group_status group_status = {.argsz = sizeof(group_status)};
@@ -45,31 +43,31 @@ int main() {
 	else{
 		printf("Groupd fd: %d\n", group);
 	}
-	int checker = -100;
+	int ret = -100;
 	/* Test the group is viable and available */
-	checker = ioctl(group, VFIO_GROUP_GET_STATUS, &group_status);
-	if(checker < 0){
-		printf("getting group status failed. Error: %d\n", checker);
+	ret = ioctl(group, VFIO_GROUP_GET_STATUS, &group_status);
+	if(ret < 0){
+		printf("getting group status failed. Error: %d\n", ret);
 	}
 	if (!(group_status.flags & VFIO_GROUP_FLAGS_VIABLE)){
 		/* Group is not viable (ie, not all devices bound for vfio) */
 		printf("group not ready for this\n");
 	}
 	/* Add the group to the container */
-	checker = ioctl(group, VFIO_GROUP_SET_CONTAINER, &container);
-	if(checker < 0){
-		printf("adding group to container failed. Error: %d\n", checker);
+	ret = ioctl(group, VFIO_GROUP_SET_CONTAINER, &container);
+	if(ret < 0){
+		printf("adding group to container failed. Error: %d\n", ret);
 	}
 	/* Enable the IOMMU model we want */
-	checker = ioctl(container, VFIO_SET_IOMMU, VFIO_TYPE1_IOMMU);
-	if(checker < 0){
-		printf("Setting IOMMU type failed. Error: %d\n", checker);
+	ret = ioctl(container, VFIO_SET_IOMMU, VFIO_TYPE1_IOMMU);
+	if(ret < 0){
+		printf("Setting IOMMU type failed. Error: %d\n", ret);
 	}
 	iommu_info.iova_pgsizes = 1324u;
 	/* Get addition IOMMU info */
-	checker = ioctl(container, VFIO_IOMMU_GET_INFO, &iommu_info);
-	if(checker < 0){
-		printf("getting iommu info failed. Error: %d\n", checker);
+	ret = ioctl(container, VFIO_IOMMU_GET_INFO, &iommu_info);
+	if(ret < 0){
+		printf("getting iommu info failed. Error: %d\n", ret);
 	}
 	printf("flags iommu: %u\n",iommu_info.flags);
 
@@ -80,9 +78,9 @@ int main() {
 	dma_map.iova = 0; /* 1MB starting at 0x0 from device view */
 	dma_map.flags = VFIO_DMA_MAP_FLAG_READ | VFIO_DMA_MAP_FLAG_WRITE;
 
-	checker = ioctl(container, VFIO_IOMMU_MAP_DMA, &dma_map);
-	if(checker < 0){
-		printf("I wonder if this means something. %d\n", checker);
+	ret = ioctl(container, VFIO_IOMMU_MAP_DMA, &dma_map);
+	if(ret < 0){
+		printf("I wonder if this means something. %d\n", ret);
 	}
 
 	printf("DMA Map info. Size: %llu, flags: %u\n", dma_map.size, dma_map.flags);
@@ -97,9 +95,9 @@ int main() {
 	}
 
 	/* Test and setup the device */
-	checker = ioctl(device, VFIO_DEVICE_GET_INFO, &device_info);
-	if(checker < 0){
-		printf("Getting device info failed. error: %d\n", checker);
+	ret = ioctl(device, VFIO_DEVICE_GET_INFO, &device_info);
+	if(ret < 0){
+		printf("Getting device info failed. error: %d\n", ret);
 	}
 	printf("Device 3 regions flags, regions, irqs: %u %u %u\n", device_info.flags, device_info.num_regions, device_info.num_irqs);
 
@@ -108,9 +106,9 @@ int main() {
 
 		reg.index = i;
 
-		checker = ioctl(device, VFIO_DEVICE_GET_REGION_INFO, &reg);
-		if(checker < 0){
-			printf("Something went wrong when getting device region. %d\n", checker);
+		ret = ioctl(device, VFIO_DEVICE_GET_REGION_INFO, &reg);
+		if(ret < 0){
+			printf("This device region is not set. %d\n", ret);
 		}
 		else{
 			printf("Index:%d , Flags:%u , Size:%llu , Offset:%llu.\n", i, reg.flags, reg.size, reg.offset);
@@ -120,18 +118,17 @@ int main() {
 
 		if(reg.index == 7){
 			void * numbers = malloc(reg.size);
-			checker = pread(device, numbers, reg.size, reg.offset);
-			if(checker < 0){
-				printf("err %d\n", checker);
+			ret = pread(device, numbers, reg.size, reg.offset);
+			if(ret < 0){
+				printf("err %d\n", ret);
 			}
 			else{
-				printf("read %d bytes\n", checker);
+				printf("read %d bytes\n", ret);
 				unsigned short * add  = (unsigned short *) numbers;
-				// __u64 * add = (__u64 *) numbers;	
 				for(i = 0; i < reg.size/8; i+=2){
-					printf("%08x    ", i*8);
+					printf("%08x", i*8);
 					for(int j = 0; j < 8; j++){
-						printf("%04X ", *add);
+						printf(" %04x", *add);
 						add++;
 					}
 					printf("\n");
@@ -149,9 +146,9 @@ int main() {
 
 		irq.index = i;
 
-		checker = ioctl(device, VFIO_DEVICE_GET_IRQ_INFO, &irq);
-		if(checker < 0){
-			printf("Something went wrong when getting irq info. %d\n", checker);
+		ret = ioctl(device, VFIO_DEVICE_GET_IRQ_INFO, &irq);
+		if(ret < 0){
+			printf("Something went wrong when getting irq info. %d\n", ret);
 		}
 		else{
 			printf("Flags: %u, Count: %u\n",irq.flags, irq.count);
