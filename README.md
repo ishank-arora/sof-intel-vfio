@@ -16,3 +16,7 @@ WIP, exploring how IRQ handling will work.
 
 ### device_to_vfio.sh
 * Binds Unbinds devices in group 11 from their default drivers and then binds them to vfio-pci driver
+
+
+### Helpful links
+[https://stackoverflow.com/questions/29461518/interrupt-handling-for-assigned-device-through-vfio](https://stackoverflow.com/questions/29461518/interrupt-handling-for-assigned-device-through-vfio)

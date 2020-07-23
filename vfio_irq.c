@@ -113,9 +113,19 @@ int main() {
 		}
 		else{
 			printf("Flags: %u, Count: %u\n",irq.flags, irq.count);
+			struct vfio_irq_set irq_set = { .argsz = sizeof(irq_set) };
+			irq_set.count = irq.count;
+			irq_set.start = 1;
+			
+
+			irq_set.index = i;
+
+			ret = ioctl(device, VFIO_DEVICE_SET_IRQS, &irq_set);
+
 		}
 
 		/* Setup IRQs... eventfds, VFIO_DEVICE_SET_IRQS */
+		
 	}
 
 
