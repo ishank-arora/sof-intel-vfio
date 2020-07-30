@@ -9,6 +9,15 @@
 #include <stdio.h>
 
 
+#define SND_SOF_FW_SIG_SIZE 4
+
+struct snd_sof_fw_header {
+	unsigned char sig[SND_SOF_FW_SIG_SIZE]; /* "Reef" */
+	__u32 file_size;	/* size of file minus this header */
+	__u32 num_modules;	/* number of modules */
+	__u32 abi;		/* version of header format */
+} __packed;
+
 int main() {
 	int container = -1, group = -1, device = -1, i = 0;
 	struct vfio_group_status group_status = {.argsz = sizeof(group_status)};
@@ -123,50 +132,32 @@ int main() {
 		 * For PCI devices, config space is a region */
 	}
 	printf("\n\n");
-	struct vfio_region_info reg = { .argsz = sizeof(reg) };
-	reg.index = VFIO_PCI_CONFIG_REGION_INDEX;
 
-	ret = ioctl(device, VFIO_DEVICE_GET_REGION_INFO, &reg);
-	if(ret < 0){
-		printf("Error getting config space device region. %d\n", ret);
-	}
-	else{
-		void * numbers = malloc(reg.size);
-		ret = pread(device, numbers, reg.size, reg.offset);
-		if(ret < 0){
-			printf("read err %d\n", ret);
-		}
-		else{
-			printf("read %d bytes\n", ret);
-			unsigned short * add  = (unsigned short *) numbers;
-			for(i = 0; i < reg.size/8; i+=2){
-				printf("%08x", i*8);
-				for(int j = 0; j < 8; j++){
-					printf(" %04x", *add);						
-					add++;
-				}
-				printf("\n");
-			}
-		}
-	}
-	printf("\n\n");
-	
-	for (i = 0; i < device_info.num_irqs; i++) {
-		struct vfio_irq_info irq = { .argsz = sizeof(irq) };
-
-		irq.index = i;
-
-		ret = ioctl(device, VFIO_DEVICE_GET_IRQ_INFO, &irq);
-		if(ret < 0){
-			printf("Something went wrong when getting irq info. %d\n", ret);
-		}
-		else{
-			printf("Flags: %u, Count: %u\n",irq.flags, irq.count);
-		}
-
-		/* Setup IRQs... eventfds, VFIO_DEVICE_SET_IRQS */
-	}
-
-
+    const char * fw_file = "/lib/firmware/intel/sof/sof-cnl.ri";
+    struct snd_sof_fw_header * header;
+    size_t fw_size = sizeof(*header);
+    __u8 * data = (__u8 *) malloc(fw_size);
+    int f = open(fw_file, O_RDWR);
+    FILE * fp;
+    fp = fopen(fw_file, "r");
+    fseek(fp, 0L, SEEK_END);
+    long actual_size = ftell(fp);
+    rewind(fp);
+    fclose(fp);
+    printf("\n\nActual size: %ld\n\n", actual_size);
+    if(f < 0){
+        printf("opening firmware file failed\n");
+    }
+    else{
+        ret = read(f, data, actual_size);
+        if(ret < 0){
+            printf("Read firmware failed\n");
+        }
+    }
+    header = (struct snd_sof_fw_header *) data;
+    printf("file size is %u\n", header->file_size);
+    printf("signature: %s\n", header->sig);
+    printf("version is %u\n", header->abi);
+    printf("modules is %u\n", header->num_modules);
 	return 0;
 }
