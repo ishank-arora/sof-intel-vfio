@@ -1,5 +1,7 @@
 #include <linux/vfio.h>
+#include <linux/types.h>
 #include <stdlib.h>
+#include <stdbool.h>
 #include <unistd.h>
 #include <sys/mman.h>
 #include <sys/types.h>
@@ -18,8 +20,23 @@ struct snd_sof_fw_header {
 	__u32 abi;		/* version of header format */
 } __packed;
 
+struct dev {
+	int container;
+	int group;
+	int device;
+}typedef dev;
+
+struct firmware {
+	size_t size;
+	const __u8 * data;
+} typedef firmware;
+
 int main() {
-	int container = -1, group = -1, device = -1, i = 0;
+	dev * info = malloc(sizeof(dev));
+	info->container = -1;
+	info->group = -1;
+	info->device = -1;
+	int i = 0;
 	struct vfio_group_status group_status = {.argsz = sizeof(group_status)};
 	
 	struct vfio_iommu_type1_info iommu_info = { .argsz = sizeof(iommu_info) };
@@ -27,35 +44,35 @@ int main() {
 	struct vfio_device_info device_info = { .argsz = sizeof(device_info) };
 
 	/* Create a new container */
-	container = open("/dev/vfio/vfio", O_RDWR);
-	if(container < 0){
+	info->container = open("/dev/vfio/vfio", O_RDWR);
+	if(info->container < 0){
 		printf("Container did not open properly\n");
 	}
 	else{
-		printf("Container fd: %d\n", container);
+		printf("Container fd: %d\n", info->container);
 	}
 
-	if (ioctl(container, VFIO_GET_API_VERSION) != VFIO_API_VERSION){
+	if (ioctl(info->container, VFIO_GET_API_VERSION) != VFIO_API_VERSION){
 		/* Unknown API version */
 		printf("Unknown API version\n");
 	}
 
-	if (!ioctl(container, VFIO_CHECK_EXTENSION, VFIO_TYPE1_IOMMU)){
+	if (!ioctl(info->container, VFIO_CHECK_EXTENSION, VFIO_TYPE1_IOMMU)){
 		/* Doesn't support the IOMMU driver we want. */
 		printf("Wrong IOMMU version\n");
 	}
 
 	/* Open the group */
-	group = open("/dev/vfio/11", O_RDWR);
-	if(group < 0){
+	info->group = open("/dev/vfio/11", O_RDWR);
+	if(info->group < 0){
 		printf("Group didnt open correctly\n");
 	}
 	else{
-		printf("Groupd fd: %d\n", group);
+		printf("Groupd fd: %d\n", info->group);
 	}
 	int ret = -100;
 	/* Test the group is viable and available */
-	ret = ioctl(group, VFIO_GROUP_GET_STATUS, &group_status);
+	ret = ioctl(info->group, VFIO_GROUP_GET_STATUS, &group_status);
 	if(ret < 0){
 		printf("getting group status failed. Error: %d\n", ret);
 	}
@@ -64,18 +81,18 @@ int main() {
 		printf("Not all devices in group are bound vfio\n");
 	}
 	/* Add the group to the container */
-	ret = ioctl(group, VFIO_GROUP_SET_CONTAINER, &container);
+	ret = ioctl(info->group, VFIO_GROUP_SET_CONTAINER, &info->container);
 	if(ret < 0){
 		printf("adding group to container failed. Error: %d\n", ret);
 	}
 	/* Enable the IOMMU model we want */
-	ret = ioctl(container, VFIO_SET_IOMMU, VFIO_TYPE1_IOMMU);
+	ret = ioctl(info->container, VFIO_SET_IOMMU, VFIO_TYPE1_IOMMU);
 	if(ret < 0){
 		printf("Setting IOMMU type failed. Error: %d\n", ret);
 	}
 	iommu_info.iova_pgsizes = 1324u;
 	/* Get addition IOMMU info */
-	ret = ioctl(container, VFIO_IOMMU_GET_INFO, &iommu_info);
+	ret = ioctl(info->container, VFIO_IOMMU_GET_INFO, &iommu_info);
 	if(ret < 0){
 		printf("getting iommu info failed. Error: %d\n", ret);
 	}
@@ -88,7 +105,7 @@ int main() {
 	dma_map.iova = 0; /* 1MB starting at 0x0 from device view */
 	dma_map.flags = VFIO_DMA_MAP_FLAG_READ | VFIO_DMA_MAP_FLAG_WRITE;
 
-	ret = ioctl(container, VFIO_IOMMU_MAP_DMA, &dma_map);
+	ret = ioctl(info->container, VFIO_IOMMU_MAP_DMA, &dma_map);
 	if(ret < 0){
 		printf("IOMMU MAP DMA failed. %d\n", ret);
 	}
@@ -96,16 +113,16 @@ int main() {
 	printf("DMA Map info. Size: %llu, flags: %u\n", dma_map.size, dma_map.flags);
 
 	/* Get a file descriptor for the device */
-	device = ioctl(group, VFIO_GROUP_GET_DEVICE_FD, "0000:00:1f.3");
-	if(device < 0){
+	info->device = ioctl(info->group, VFIO_GROUP_GET_DEVICE_FD, "0000:00:1f.3");
+	if(info->device < 0){
 		printf("Device FD not found\n");
 	}
 	else{
-		printf("Device FD: %d\n", device);
+		printf("Device FD: %d\n", info->device);
 	}
 
 	/* Test and setup the device */
-	ret = ioctl(device, VFIO_DEVICE_GET_INFO, &device_info);
+	ret = ioctl(info->device, VFIO_DEVICE_GET_INFO, &device_info);
 	if(ret < 0){
 		printf("Getting device info failed. error: %d\n", ret);
 	}
@@ -116,7 +133,7 @@ int main() {
 
 		reg.index = i;
 
-		ret = ioctl(device, VFIO_DEVICE_GET_REGION_INFO, &reg);
+		ret = ioctl(info->device, VFIO_DEVICE_GET_REGION_INFO, &reg);
 		if(ret < 0){
 			printf("Error getting device region info. %d\n", ret);
 		}
@@ -154,10 +171,92 @@ int main() {
             printf("Read firmware failed\n");
         }
     }
-    header = (struct snd_sof_fw_header *) data;
-    printf("file size is %u\n", header->file_size);
-    printf("signature: %s\n", header->sig);
-    printf("version is %u\n", header->abi);
-    printf("modules is %u\n", header->num_modules);
+	firmware * fw = malloc(sizeof(firmware));
+	fw->data = data;
+	fw->size = actual_size;
 	return 0;
+}
+
+__u32 snd_sof_dsp_read(dev * info, __u32 bar, __u32 offset){
+	int device = info->device;
+	int ret;
+
+	struct vfio_region_info reg = { .argsz = sizeof(reg) };
+	reg.index = bar;
+
+	ret = ioctl(device, VFIO_DEVICE_GET_REGION_INFO, &reg);
+	if(ret < 0){
+		printf("Error getting device region. %d\n", ret);
+	}
+	else{
+		__u32 * result = (__u32 *) malloc(sizeof(__u32));
+		ret = pread(device, result, sizeof(__u32), reg.offset+offset);
+		if(ret < 0){
+			printf("read err in dsp_read %d\n", ret);
+		}
+		else{
+			return *result;		
+		}
+	}
+	printf("read Didnt work\n");
+	return 0;
+	
+}
+
+void snd_sof_dsp_write(dev * info, __u32 bar, __u32 offset, __u32 value){
+	int device = info->device;
+	int ret;
+
+	struct vfio_region_info reg = { .argsz = sizeof(reg) };
+	reg.index = bar;
+
+	ret = ioctl(device, VFIO_DEVICE_GET_REGION_INFO, &reg);
+	if(ret < 0){
+		printf("Error getting device region. %d\n", ret);
+		return;
+	}
+	else{
+		ret = pwrite(device, &value, sizeof(value), reg.offset+offset);
+		if(ret < 0){
+			printf("write err in dsp_write %d\n", ret);
+			return;
+		}
+	}
+	printf("write worked\n");
+	return;
+	
+}
+
+
+// bool snd_sof_dsp_update_bits(dev * info, __u32 bar, __u32 offset,
+// 			     __u32 mask, __u32 value)
+// {
+// 	unsigned long flags;
+// 	bool change;
+
+// 	spin_lock_irqsave(&sdev->hw_lock, flags);
+// 	change = snd_sof_dsp_update_bits_unlocked(sdev, bar, offset, mask,
+// 						  value);
+// 	spin_unlock_irqrestore(&sdev->hw_lock, flags);
+// 	return change;
+// }
+
+
+bool snd_sof_dsp_update_bits_unlocked(dev * info, __u32 bar,
+				      __u32 offset, __u32 mask, __u32 value)
+{
+	unsigned int old, new;
+	__u32 ret;
+
+	ret = snd_sof_dsp_read(info, bar, offset);
+
+	old = ret;
+	new = (old & ~mask) | (value & mask);
+
+	if (old == new)
+		return false;
+
+	snd_sof_dsp_write(info, bar, offset, new);
+
+	return true;
 }
