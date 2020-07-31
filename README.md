@@ -18,5 +18,9 @@ WIP, exploring how IRQ handling will work.
 * Binds Unbinds devices in group 11 from their default drivers and then binds them to vfio-pci driver
 
 
+### vfio_boot.c
+* File working to load and boot firmware.
+
+
 ### Helpful links
 [https://stackoverflow.com/questions/29461518/interrupt-handling-for-assigned-device-through-vfio](https://stackoverflow.com/questions/29461518/interrupt-handling-for-assigned-device-through-vfio)
