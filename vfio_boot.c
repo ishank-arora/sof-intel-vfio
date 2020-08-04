@@ -9,9 +9,14 @@
 #include <fcntl.h>
 #include <sys/ioctl.h>
 #include <stdio.h>
+#include "common.h"
 
 
-#define SND_SOF_FW_SIG_SIZE 4
+
+
+
+
+
 
 struct snd_sof_fw_header {
 	unsigned char sig[SND_SOF_FW_SIG_SIZE]; /* "Reef" */
@@ -20,19 +25,10 @@ struct snd_sof_fw_header {
 	__u32 abi;		/* version of header format */
 } __packed;
 
-struct dev {
-	int container;
-	int group;
-	int device;
-}typedef dev;
 
-struct firmware {
-	size_t size;
-	const __u8 * data;
-} typedef firmware;
 
 int main() {
-	dev * info = malloc(sizeof(dev));
+	dev * info = (dev *) malloc(sizeof(dev));
 	info->container = -1;
 	info->group = -1;
 	info->device = -1;
@@ -171,11 +167,76 @@ int main() {
             printf("Read firmware failed\n");
         }
     }
-	firmware * fw = malloc(sizeof(firmware));
+	firmware * fw = (firmware *) malloc(sizeof(firmware));
 	fw->data = data;
 	fw->size = actual_size;
+
+
+	snd_sof_dsp_update_bits(info, HDA_DSP_HDA_BAR, SOF_HDA_INTCTL,
+					1 << 0x7,
+					1 << 0x7);
+
+	int sd_offset = SOF_STREAM_SD_OFFSET(0x7);
+
+	snd_sof_dsp_update_bits(info, HDA_DSP_HDA_BAR,
+				sd_offset,
+				SOF_HDA_SD_CTL_DMA_START |
+				SOF_HDA_CL_DMA_SD_INT_MASK,
+				SOF_HDA_SD_CTL_DMA_START |
+				SOF_HDA_CL_DMA_SD_INT_MASK);
+
+
+	printf("error: Error code=0x%x: FW status=0x%x\n",
+			snd_sof_dsp_read(info, HDA_DSP_BAR,
+					 HDA_DSP_SRAM_REG_ROM_ERROR),
+			snd_sof_dsp_read(info, HDA_DSP_BAR,
+					 HDA_DSP_SRAM_REG_ROM_STATUS));
+
+	__u32 status = snd_sof_dsp_read(info, HDA_DSP_BAR,
+					HDA_DSP_SRAM_REG_ROM_STATUS);
+
+	int count = 0;
+	while(((status & HDA_DSP_ROM_STS_MASK) != HDA_DSP_ROM_FW_ENTERED) & count < 10000){
+		status = snd_sof_dsp_read(info, HDA_DSP_BAR,
+					HDA_DSP_SRAM_REG_ROM_STATUS);	
+		count++;
+	}
+	
+
+	if((status & HDA_DSP_ROM_STS_MASK) == HDA_DSP_ROM_FW_ENTERED){
+		printf("GOod!\n");
+	}
+	else{
+		printf("Bad!\n");
+	}
+
+
+
 	return 0;
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 __u32 snd_sof_dsp_read(dev * info, __u32 bar, __u32 offset){
 	int device = info->device;
@@ -228,35 +289,31 @@ void snd_sof_dsp_write(dev * info, __u32 bar, __u32 offset, __u32 value){
 }
 
 
-// bool snd_sof_dsp_update_bits(dev * info, __u32 bar, __u32 offset,
-// 			     __u32 mask, __u32 value)
-// {
-// 	unsigned long flags;
-// 	bool change;
-
-// 	spin_lock_irqsave(&sdev->hw_lock, flags);
-// 	change = snd_sof_dsp_update_bits_unlocked(sdev, bar, offset, mask,
-// 						  value);
-// 	spin_unlock_irqrestore(&sdev->hw_lock, flags);
-// 	return change;
-// }
-
-
-bool snd_sof_dsp_update_bits_unlocked(dev * info, __u32 bar,
-				      __u32 offset, __u32 mask, __u32 value)
+bool snd_sof_dsp_update_bits(dev * info, __u32 bar, __u32 offset,
+			     __u32 mask, __u32 value)
 {
-	unsigned int old, new;
+
+	bool change = snd_sof_dsp_update_bits_unlocked(info, bar, offset, mask,
+						  value);
+	return change;
+}
+
+
+bool snd_sof_dsp_update_bits_unlocked(dev * info, __u32 bar, __u32 offset, __u32 mask, __u32 value)
+{
+	unsigned int old;
+	unsigned int new_val;
 	__u32 ret;
 
 	ret = snd_sof_dsp_read(info, bar, offset);
 
 	old = ret;
-	new = (old & ~mask) | (value & mask);
+	new_val = (old & ~mask) | (value & mask);
 
-	if (old == new)
+	if (old == new_val)
 		return false;
 
-	snd_sof_dsp_write(info, bar, offset, new);
+	snd_sof_dsp_write(info, bar, offset, new_val);
 
 	return true;
 }

@@ -3,9 +3,7 @@
         {
             "name": "Linux",
             "includePath": [
-                "${workspaceFolder}/**",
-                "/usr/local/google/home/ishankarora/chromiumos/chroot/build/hatch/usr/include",
-                "/usr/local/google/home/ishankarora/chromiumos/src/third_party/kernel/v4.19/include"
+                "${workspaceFolder}/**"
             ],
             "defines": [],
             "compilerPath": "/usr/bin/clang",
