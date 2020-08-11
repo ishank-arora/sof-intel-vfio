@@ -7,6 +7,8 @@
 #include <fcntl.h>
 #include <sys/ioctl.h>
 #include <stdio.h>
+#include <sys/types.h>
+
 
 
 int main() {
@@ -112,7 +114,7 @@ int main() {
 			printf("Error getting device region info. %d\n", ret);
 		}
 		else{
-			printf("Index:%d , Flags:%u , Size:%llu , Offset:%llu.\n", i, reg.flags, reg.size, reg.offset);
+			printf("Index:%d , Flags:%u , Size:%llu , Offset:%x.\n", i, reg.flags, reg.size, reg.offset);
 
 
 		}
