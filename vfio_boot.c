@@ -12,6 +12,7 @@
 #include <stdio.h>
 #include <unistd.h>
 #include "common.h"
+#include "probe.h"
 
 int main() {
 	int ret = -100;
@@ -24,7 +25,7 @@ int main() {
 
 	vfio_setup(info);
 
-    get_firmware(fw);
+    load_fw_for_dma(info->container, "/lib/firmware/intel/sof/sof-cnl.ri", 0xfff40000);
 
 	//Start booting process.
 	snd_sof_dsp_update_bits(info, HDA_DSP_HDA_BAR, SOF_HDA_INTCTL,
@@ -73,34 +74,34 @@ int main() {
 	return 0;
 }
 
-void get_firmware(struct firmware * fw){
-	int ret = -100;
-	const char * fw_file = "/lib/firmware/intel/sof/sof-cnl.ri";
-    int f = open(fw_file, O_RDWR);
-    FILE * fp;
-    fp = fopen(fw_file, "r");
-    fseek(fp, 0L, SEEK_END);
-    long actual_size = ftell(fp);
-	__u8 * data = (__u8 *) malloc(actual_size);
-	if(data == NULL){
-		printf("malloc of %d bytes failed", actual_size);
-	}
-    rewind(fp);
-    fclose(fp);
-    printf("\n\nActual size: %ld 0x%x\n\n", actual_size, actual_size);
-    if(f < 0){
-        printf("opening firmware file failed\n");
-    }
-    else{
-        ret = read(f, data, actual_size);
-        if(ret < 0){
-            printf("Read firmware failed\n");
-        }
-    }
+// void get_firmware(struct firmware * fw){
+// 	int ret = -100;
+// 	const char * fw_file = "/lib/firmware/intel/sof/sof-cnl.ri";
+//     int f = open(fw_file, O_RDWR);
+//     FILE * fp;
+//     fp = fopen(fw_file, "r");
+//     fseek(fp, 0L, SEEK_END);
+//     long actual_size = ftell(fp);
+// 	__u8 * data = (__u8 *) malloc(actual_size);
+// 	if(data == NULL){
+// 		printf("malloc of %d bytes failed", actual_size);
+// 	}
+//     rewind(fp);
+//     fclose(fp);
+//     printf("\n\nActual size: %ld 0x%x\n\n", actual_size, actual_size);
+//     if(f < 0){
+//         printf("opening firmware file failed\n");
+//     }
+//     else{
+//         ret = read(f, data, actual_size);
+//         if(ret < 0){
+//             printf("Read firmware failed\n");
+//         }
+//     }
 	
-	fw->data = data;
-	fw->size = actual_size;
-}
+// 	fw->data = data;
+// 	fw->size = actual_size;
+// }
 
 
 void vfio_setup(struct dev * info){
@@ -111,7 +112,6 @@ void vfio_setup(struct dev * info){
 	struct vfio_group_status group_status = {.argsz = sizeof(group_status)};
 	
 	struct vfio_iommu_type1_info iommu_info = { .argsz = sizeof(iommu_info) };
-	struct vfio_iommu_type1_dma_map dma_map = { .argsz = sizeof(dma_map) };
 	struct vfio_device_info device_info = { .argsz = sizeof(device_info) };
 
 	/* Create a new container */
@@ -167,20 +167,6 @@ void vfio_setup(struct dev * info){
 		printf("getting iommu info failed. Error: %d\n", ret);
 	}
 	printf("flags iommu: %u\n",iommu_info.flags);
-
-	/* Allocate some space and setup a DMA mapping */
-	dma_map.vaddr = (__u64) mmap(0, 1024*1024, PROT_READ | PROT_WRITE,
-			     MAP_PRIVATE | MAP_ANONYMOUS, 0, 0);
-	dma_map.size = 1024*1024;
-	dma_map.iova = 0; /* 1MB starting at 0x0 from device view */
-	dma_map.flags = VFIO_DMA_MAP_FLAG_READ | VFIO_DMA_MAP_FLAG_WRITE;
-
-	ret = ioctl(info->container, VFIO_IOMMU_MAP_DMA, &dma_map);
-	if(ret < 0){
-		printf("IOMMU MAP DMA failed. %d\n", ret);
-	}
-
-	printf("DMA Map info. Size: %llu, flags: %u\n", dma_map.size, dma_map.flags);
 
 	/* Get a file descriptor for the device */
 	info->device = ioctl(info->group, VFIO_GROUP_GET_DEVICE_FD, "0000:00:1f.3");

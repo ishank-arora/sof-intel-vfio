@@ -112,7 +112,7 @@ int main() {
 			printf("Something went wrong when getting irq info. %d\n", ret);
 		}
 		else{
-			printf("Flags: %u, Count: %u\n",irq.flags, irq.count);
+			printf("IRQ index: %d, Flags: %u, Count: %u\n", i, irq.flags, irq.count);
 			struct vfio_irq_set irq_set = { .argsz = sizeof(irq_set) };
 			irq_set.count = irq.count;
 			irq_set.start = 1;
