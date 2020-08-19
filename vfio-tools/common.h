@@ -10,6 +10,14 @@ struct dev {
 	int device;
 };
 
+struct snd_dma_buffer {
+	struct dev dev;	/* device type */
+	unsigned char *area;	/* virtual pointer */
+	dma_addr_t addr;	/* physical address */
+	size_t bytes;		/* buffer size in bytes */
+	void *private_data;	/* private for allocator; don't touch */
+};
+
 struct firmware {
 	size_t size;
 	const __u8 * data;

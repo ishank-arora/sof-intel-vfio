@@ -1,4 +1,4 @@
-CC=x86_64-cros-linux-gnu-g++
+CC=x86_64-cros-linux-gnu-clang
 
 all : vfio_boot.o probe.o
 	cc -o vfio_sof vfio_boot.o probe.o

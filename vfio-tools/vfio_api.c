@@ -114,9 +114,7 @@ int main() {
 			printf("Error getting device region info. %d\n", ret);
 		}
 		else{
-			printf("offset: %d\n", reg.offset);
-			printf("Index:%d , Flags:%u , Size:%llu , Offset:%x.\n", i, reg.flags, reg.size, reg.offset);
-
+			printf("Index:%d , Flags:%u , Size:%llu , Offset:%llx.\n", i, reg.flags, reg.size, reg.offset);
 
 		}
 
@@ -141,7 +139,7 @@ int main() {
 		}
 		else{
 			printf("read %d bytes\n", ret);
-			printf("reg offset: %x\n", reg.offset);
+			printf("reg offset: %llx\n", reg.offset);
 			unsigned short * add  = (unsigned short *) numbers;
 			for(i = 0; i < reg.size/8; i+=2){
 				printf("%08x", i*8);
