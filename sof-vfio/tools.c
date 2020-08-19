@@ -42,10 +42,24 @@ void snd_sof_dsp_write(struct dev * info, __u32 bar, __u32 offset, __u32 value){
 		printf("write err in dsp_write %d\n", ret);
 		return;
 	}
-	printf("write worked\n");
+	//printf("write worked\n");
 
 	return;
 	
+}
+
+void sof_io_write(struct dev * info, unsigned long long offset, unsigned int value){
+	int device = info->device;
+	int ret;
+
+	ret = pwrite(device, &value, sizeof(value), offset);
+	if(ret < 0){
+		printf("write err in io_write %d\n", ret);
+		return;
+	}
+	//printf("write worked\n");
+
+	return;	
 }
 
 
@@ -78,27 +92,36 @@ bool snd_sof_dsp_update_bits_unlocked(struct dev * info, __u32 bar, __u32 offset
 	return true;
 }
 
+void snd_sof_dsp_update_bits_forced(struct dev *info, __u32 bar,
+				    __u32 offset, __u32 mask, __u32 value)
+{
+	//unsigned long flags;
+
+	//spin_lock_irqsave(&sdev->hw_lock, flags);
+	snd_sof_dsp_update_bits_unlocked(info, bar, offset, mask, value);
+	//spin_unlock_irqrestore(&sdev->hw_lock, flags);
+}
 
 
-// const struct sof_intel_dsp_desc * get_chip_info(){
-//     const struct sof_intel_dsp_desc cnl_chip_info = {
-// 	/* Cannonlake */
-// 	.cores_num = 4,
-// 	.init_core_mask = 1,
-// 	.cores_mask = HDA_DSP_CORE_MASK(0) |
-// 				HDA_DSP_CORE_MASK(1) |
-// 				HDA_DSP_CORE_MASK(2) |
-// 				HDA_DSP_CORE_MASK(3),
-// 	.ipc_req = CNL_DSP_REG_HIPCIDR,
-// 	.ipc_req_mask = CNL_DSP_REG_HIPCIDR_BUSY,
-// 	.ipc_ack = CNL_DSP_REG_HIPCIDA,
-// 	.ipc_ack_mask = CNL_DSP_REG_HIPCIDA_DONE,
-// 	.ipc_ctl = CNL_DSP_REG_HIPCCTL,
-// 	.rom_init_timeout	= 300,
-// 	.ssp_count = CNL_SSP_COUNT,
-// 	.ssp_base_offset = CNL_SSP_BASE_OFFSET,
-//     };
 
-//     return &cnl_chip_info;
-// }
+const struct sof_intel_dsp_desc * get_chip_info(){
+    struct sof_intel_dsp_desc * cnl_chip_info = (struct sof_intel_dsp_desc *) malloc(sizeof(struct sof_intel_dsp_desc));
+	/* Cannonlake */
+	cnl_chip_info->cores_num = 4;
+	cnl_chip_info->init_core_mask = 1;
+	cnl_chip_info->cores_mask = HDA_DSP_CORE_MASK(0) |
+				HDA_DSP_CORE_MASK(1) |
+				HDA_DSP_CORE_MASK(2) |
+				HDA_DSP_CORE_MASK(3);
+	cnl_chip_info->ipc_req = CNL_DSP_REG_HIPCIDR;
+	cnl_chip_info->ipc_req_mask = CNL_DSP_REG_HIPCIDR_BUSY;
+	cnl_chip_info->ipc_ack = CNL_DSP_REG_HIPCIDA;
+	cnl_chip_info->ipc_ack_mask = CNL_DSP_REG_HIPCIDA_DONE;
+	cnl_chip_info->ipc_ctl = CNL_DSP_REG_HIPCCTL;
+	cnl_chip_info->rom_init_timeout	= 300;
+	cnl_chip_info->ssp_count = CNL_SSP_COUNT;
+	cnl_chip_info->ssp_base_offset = CNL_SSP_BASE_OFFSET;
+
+    return cnl_chip_info;
+}
 

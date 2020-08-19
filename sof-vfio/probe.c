@@ -62,6 +62,11 @@ int hda_dsp_probe(struct dev * info)
 	struct node * n = *info->stream_ref;
 	struct sof_intel_hda_stream * hda_stream;
 	int sd_offset = 0;
+
+	/* enable/disable DMI Link L1 support */
+	unsigned int val = true ? HDA_VS_INTEL_EM2_L1SEN : 0;
+	snd_sof_dsp_update_bits(info, HDA_DSP_HDA_BAR, HDA_VS_INTEL_EM2,
+				HDA_VS_INTEL_EM2_L1SEN, val);
 	
 	while(n != NULL) {
 		hda_stream = (struct sof_intel_hda_stream *) n->data;
