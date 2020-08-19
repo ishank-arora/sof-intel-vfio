@@ -113,10 +113,10 @@ hda_dsp_stream_get(struct dev *info, int direction)
 }
 
 
-	int hda_dsp_stream_hw_params(struct dev *info,
-					struct hdac_ext_stream *stream,
-					struct snd_dma_buffer *dmab,
-					struct snd_pcm_hw_params *params)
+int hda_dsp_stream_hw_params(struct dev *info, 
+		struct hdac_ext_stream *stream,
+		struct snd_dma_buffer *dmab,
+		struct snd_pcm_hw_params *params)
 {
 	//struct hdac_bus *bus = sof_to_bus(sdev);
 	struct hdac_stream *hstream = &stream->hstream;
