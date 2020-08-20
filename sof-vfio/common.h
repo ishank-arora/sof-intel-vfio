@@ -130,6 +130,9 @@ bool snd_sof_dsp_update_bits(struct dev * info, __u32 bar, __u32 offset,
 void snd_sof_dsp_update_bits_forced(struct dev *info, __u32 bar,
 				    __u32 offset, __u32 mask, __u32 value);
 
+bool snd_sof_pci_update_bits(struct dev *info, __u32 offset,
+			     __u32 mask, __u32 value);
+
 
 #define snd_sof_dsp_read_poll_timeout(info, bar, offset, val, cond, sleep_us, timeout_us) \
 ({ \
@@ -172,6 +175,8 @@ int hda_dsp_probe(struct dev * info);
 int hda_dsp_ctrl_get_caps(struct dev * info);
 
 void hda_dsp_ctrl_ppcap_enable(struct dev *info, bool enable);
+
+int hda_dsp_ctrl_clock_power_gating(struct dev *info, bool enable);
 
 void hda_dsp_ctrl_ppcap_int_enable(struct dev *info, bool enable);
 

@@ -32,7 +32,9 @@ int main(int argc, char ** argv){
     struct dev * info = (struct dev *) calloc(1,sizeof(struct dev));
     vfio_setup(info);
     hda_dsp_probe(info);
+	hda_dsp_ctrl_clock_power_gating(info, false);
 	hda_dsp_cl_boot_firmware(info);
+	hda_dsp_ctrl_clock_power_gating(info, true);
 
 }
 

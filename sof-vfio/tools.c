@@ -103,6 +103,16 @@ void snd_sof_dsp_update_bits_forced(struct dev *info, __u32 bar,
 }
 
 
+bool snd_sof_pci_update_bits(struct dev *info, __u32 offset,
+			     __u32 mask, __u32 value)
+{
+	bool change;
+
+	change = snd_sof_dsp_update_bits_unlocked(info, VFIO_PCI_CONFIG_REGION_INDEX, offset, mask, value);
+	return change;
+}
+
+
 
 const struct sof_intel_dsp_desc * get_chip_info(){
     struct sof_intel_dsp_desc * cnl_chip_info = (struct sof_intel_dsp_desc *) malloc(sizeof(struct sof_intel_dsp_desc));
