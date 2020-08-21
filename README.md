@@ -1,4 +1,4 @@
-# sof-intel-vfio
+# sof-intel-vfio (on Cannonlake)
 
 ### device_to_vfio.sh
 * Binds Unbinds devices in group 11 from their default drivers and then binds them to vfio-pci driver
