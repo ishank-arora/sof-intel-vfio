@@ -31,4 +31,7 @@ WIP, exploring how IRQ handling will work.
 
 
 ### Helpful links
-[https://stackoverflow.com/questions/29461518/interrupt-handling-for-assigned-device-through-vfio](https://stackoverflow.com/questions/29461518/interrupt-handling-for-assigned-device-through-vfio)
+* [Linux VFIO doc](https://www.kernel.org/doc/Documentation/vfio.txt)
+* [PCI device assignment talk](https://www.youtube.com/watch?v=WFkdTFTOTpA)
+  * [Slides for above talk](helpful/01x04-Alex_Williamson-An_Introduction_to_PCI_Device_Assignment_with_VFIO.pdf)
+* [https://stackoverflow.com/questions/29461518/interrupt-handling-for-assigned-device-through-vfio](https://stackoverflow.com/questions/29461518/interrupt-handling-for-assigned-device-through-vfio)
