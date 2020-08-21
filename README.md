@@ -21,7 +21,7 @@ WIP, exploring how IRQ handling will work.
 ### To load firmware and boot audio DSP
 * Look in folder sof-vfio/
 * sof-vfio.c: has vfio specific methods, such as setting up vfio on a particular device, memory mampping a region of the device, adding a DMA map to the vfio container so that the attached IOMMU can convert an address from POV of device to the virtual process address. Minimum DMA mapping size must be the page size. 
-  * More information in this [talk](https://www.youtube.com/watch?v=WFkdTFTOTpA) and in these [slides](helpful/01x04-Alex_Williamson-An_Introduction_to_PCI_Device_Assignment_with_VFIO.pdf) from the same talk
+  * More information in this <a href="https://www.youtube.com/watch?v=WFkdTFTOTpA" target="_blank">talk</a> and in these [slides](helpful/01x04-Alex_Williamson-An_Introduction_to_PCI_Device_Assignment_with_VFIO.pdf) from the same talk
 * tools.c: file has tools to read/write and update bits on the device using vfio.
 * list.c: basic doubly linked list with functionality to only add to the tail.
 * probe.c: methods converted to userspace with the intention of emulating the actions done by the actual SOF device driver during its probe.
