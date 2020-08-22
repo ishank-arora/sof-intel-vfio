@@ -32,6 +32,7 @@ WIP, exploring how IRQ handling will work.
 
 ### Helpful links
 * [Linux VFIO doc](https://www.kernel.org/doc/Documentation/vfio.txt)
+* [Interrupt information] (https://electronics.stackexchange.com/questions/76867/what-do-the-different-interrupts-in-pcie-do-i-referring-to-msi-msi-x-and-intx/343218#343218)
 * [PCI device assignment talk](https://www.youtube.com/watch?v=WFkdTFTOTpA)
   * [Slides for above talk](helpful/01x04-Alex_Williamson-An_Introduction_to_PCI_Device_Assignment_with_VFIO.pdf)
 * [https://stackoverflow.com/questions/29461518/interrupt-handling-for-assigned-device-through-vfio](https://stackoverflow.com/questions/29461518/interrupt-handling-for-assigned-device-through-vfio)
